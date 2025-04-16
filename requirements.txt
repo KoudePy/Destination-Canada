@@ -2,6 +2,10 @@ setuptools
 matplotlib
 numpy
 pandas
-scikit_learn
+scikit-learn
 seaborn
 streamlit
+plotly
+watchdog
+streamlit-folium
+folium
