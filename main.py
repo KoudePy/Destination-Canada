@@ -48,4 +48,3 @@ def navigation():
         #home.load_view()
 
 navigation()
-
