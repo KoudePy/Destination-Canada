@@ -12,17 +12,14 @@ from db import (
     get_total_by_immigration_category
 )
 
-# Config
-st.set_page_config(page_title="Destination Canada (SQL)", page_icon="🇨🇦")
+# Configuration de la page (appelé une seule fois ici)
+st.set_page_config(page_title="Destination Canada", page_icon="🇨🇦")
 
-# 🔐 Gestion des utilisateurs
+# Connexion simplifiée
 st.sidebar.title("🔐 Connexion")
-user_role = st.sidebar.selectbox(
-    "Sélectionnez votre rôle",
-    ["Visiteur", "Analyste", "Admin"]
-)
+user_role = st.sidebar.selectbox("Sélectionnez votre rôle", ["Visiteur", "Analyste", "Admin"])
 
-st.title("🇨🇦 Destination Canada – Vue SQL")
+st.title("🇨🇦 Destination Canada")
 st.markdown("Analyse alimentée directement par la base relationnelle")
 
 # Sélection d'année
@@ -58,13 +55,14 @@ else:
     st.info("Connectez-vous comme analyste ou admin pour exporter les données.")
 
 # Onglets
-accueil, tab1, tab2, tab3, tab4, tab5 = st.tabs([
+accueil, tab1, tab2, tab3, tab4, tab5, tab6, = st.tabs([
     "🏠 Accueil",
     "📊 Par statut temporaire",
     "🏙️ Provinces populaires",
     "📈 Évolution temporelle",
-    "🗺️ Carte Folium (SQL)",
-    "📋 Tableau croisé"
+    "🗺️ Carte interactive",
+    "📋 Tableau croisé",
+    "🌍 Pays d’origine"
 ])
 
 with accueil:
@@ -78,9 +76,11 @@ with accueil:
         filtered_df.groupby("province_name")["total"].sum().idxmax()
         if not filtered_df.empty else "-"
     )
-    st.metric("Total transitions", f"{total_transitions:,}")
-    st.metric("Statut dominant", top_status)
-    st.metric("Province dominante", top_province)
+    col1, col2, col3 = st.columns(3)
+    col1.metric("📈 Total transitions", f"{total_transitions:,}")
+    col2.metric("🧳 Statut dominant", top_status)
+    col3.metric("🏙️ Province dominante", top_province)
+
 
 with tab1:
     st.subheader("📊 Transitions par statut temporaire")
@@ -92,10 +92,12 @@ with tab1:
         grouped.plot(kind="bar", ax=ax)
         ax.set_ylabel("Transitions")
         ax.set_xlabel("Statut")
-        st.pyplot(fig)
+
+        with st.expander("📊 Voir le graphique"):   
+            st.pyplot(fig)
 
 with tab2:
-    st.subheader("🏙️ Top provinces")
+    st.subheader("🏙️ Provinces les plus populaires")
     if filtered_df.empty:
         st.warning("Aucune donnée.")
     else:
@@ -109,10 +111,17 @@ with tab2:
         top_provinces.plot(kind="bar", ax=ax2, color="skyblue")
         ax2.set_ylabel("Transitions")
         ax2.set_xlabel("Province")
-        st.pyplot(fig2)
+
+        with st.container(): 
+            st.markdown("**🏅 Classement des provinces les plus attractives**")
+
+            with st.expander("📊 Voir le graphique"):
+                st.pyplot(fig2)
+
+            st.caption("📌 Données : IRCC – Base relationnelle SQL")
 
 with tab3:
-    st.subheader("📈 Évolution du statut dans le temps")
+    st.subheader("📈 Évolution annuelle par statut")
     if selected_status == "Tous":
         st.info("Choisissez un statut pour visualiser l’évolution.")
     else:
@@ -125,10 +134,18 @@ with tab3:
             ax3.plot(evolution["year"], evolution["total"], marker="o")
             ax3.set_ylabel("Transitions")
             ax3.set_xlabel("Année")
-            st.pyplot(fig3)
+
+            with st.container():
+                st.markdown(f"**📉 Évolution annuelle du statut : `{selected_status}`**")
+
+                with st.expander("📈 Voir le graphique"):
+                    st.pyplot(fig3)
+
+                st.caption("📊 Source : Données filtrées issues de la base SQL")
+
 
 with tab4:
-    st.subheader("🗺️ Carte interactive Folium depuis SQL")
+    st.subheader("🗺️ Carte des transitions par province")
     if filtered_df.empty:
         st.warning("Pas de données pour afficher la carte.")
     else:
@@ -166,3 +183,46 @@ with tab5:
             fill_value=0
         )
         st.dataframe(pivot, use_container_width=True)
+
+
+with tab6:
+    st.subheader("🌍 Activité par pays d’origine")
+
+    if "country_name" not in df.columns:
+        st.info("✅ Cette fonctionnalité nécessite une colonne 'country_name' dans la base de données.")
+    elif filtered_df.empty:
+        st.warning("Aucune donnée disponible pour ces filtres.")
+    else:
+        # Top 10 pays
+        st.markdown("**📊 Top 10 des pays d'origine (par nombre total de transitions)**")
+        top_countries = (
+            filtered_df.groupby("country_name")["total"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(10)
+        )
+        fig6a, ax6a = plt.subplots(figsize=(10, 4))
+        top_countries.plot(kind="bar", ax=ax6a, color="darkgreen")
+        ax6a.set_ylabel("Transitions")
+        ax6a.set_xlabel("Pays")
+        st.pyplot(fig6a)
+
+        # Sélection d’un pays pour évolution
+        countries_list = sorted(filtered_df["country_name"].dropna().unique())
+        selected_country = st.selectbox("🌐 Sélectionnez un pays pour voir l’évolution", countries_list)
+
+        country_df = filtered_df[filtered_df["country_name"] == selected_country]
+        evolution_df = (
+            country_df.groupby("year")["total"].sum().reset_index()
+            if not country_df.empty else pd.DataFrame()
+        )
+
+        if evolution_df.empty:
+            st.warning("Pas d'évolution disponible pour ce pays.")
+        else:
+            st.markdown(f"**📈 Évolution annuelle pour {selected_country}**")
+            fig6b, ax6b = plt.subplots(figsize=(10, 4))
+            ax6b.plot(evolution_df["year"], evolution_df["total"], marker="o", color="orange")
+            ax6b.set_xlabel("Année")
+            ax6b.set_ylabel("Nombre de transitions")
+            st.pyplot(fig6b)

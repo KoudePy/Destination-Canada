@@ -4,6 +4,7 @@ NAVBAR_PATHS = {
     'JEU DE DONNEES': 'dataset',
     'ANALYSE': 'analysis',
     'CONCLUSION': 'conclusion',
+    "Destination Canada": "eda"
 }
 
 SETTINGS = {

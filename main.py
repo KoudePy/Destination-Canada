@@ -43,6 +43,15 @@ def navigation():
     elif route == "/login":
         login.load_view()
 
+    elif route == "/eda":
+        import eda_app_sql
+        eda_app_sql.load_view()
+
+    elif route == "/options":
+        options.load_view()
+
+    
+
     #else:
         #redirect("/home")
         #home.load_view()
