@@ -86,7 +86,7 @@ Réalisé dans le cadre du **projet fil rouge – Bootcamp Data Rockstars**.
 pip install -r requirements.txt
 
 # Lancer l'application principale
-streamlit run main.py
+streamlit run eda_app_sql.py
 ```
 
 ---
@@ -121,8 +121,10 @@ Projet réalisé par :
 
 ## 📸 Captures et démonstration
 
-*(À compléter avec des screenshots dans la version finale)*
-
+![Page d'accueil](<Page 1.png>)
+![Graphique bar 1](<page 2.png>)
+![Graphique Bar](<page 3.png>)
+![Carte du Canada](<page 4.png>)
 ---
 
 ## 🧾 Licence

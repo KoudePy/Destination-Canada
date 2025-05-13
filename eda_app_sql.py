@@ -5,12 +5,23 @@ import folium
 from folium import Choropleth
 from streamlit_folium import st_folium
 import json
+from db import init_db, log_access
+import sqlite3
+
 from db import (
+    init_db,
+    log_access,
+    get_connection,
     get_transitions_by_year,
     get_transitions_by_status,
     get_total_by_province,
     get_total_by_immigration_category
 )
+
+# === Initialisation du logging ===
+conn = sqlite3.connect('expatriation.db', check_same_thread=False)
+init_db(conn)
+current_user_id = 1
 
 # Configuration de la page (appelé une seule fois ici)
 st.set_page_config(page_title="Destination Canada", page_icon="🇨🇦")
@@ -66,6 +77,10 @@ accueil, tab1, tab2, tab3, tab4, tab5, tab6, = st.tabs([
 ])
 
 with accueil:
+    try:
+        log_access(conn, current_user_id, action="view_accueil", page="Accueil")
+    except:
+       pass
     st.subheader("📌 Résumé des chiffres clés")
     total_transitions = int(filtered_df["total"].sum())
     top_status = (
@@ -83,6 +98,12 @@ with accueil:
 
 
 with tab1:
+    try:
+        log_access(conn, current_user_id,
+                  action="view_transitions_par_statut",
+                  page="Transitions par statut")
+    except:
+       pass
     st.subheader("📊 Transitions par statut temporaire")
     if filtered_df.empty:
         st.warning("Aucune donnée.")
@@ -97,6 +118,12 @@ with tab1:
             st.pyplot(fig)
 
 with tab2:
+    try:
+        log_access(conn, current_user_id,
+                  action="view_transitions_temporelles",
+                  page="Transitions temporelles")
+    except:
+       pass
     st.subheader("🏙️ Provinces les plus populaires")
     if filtered_df.empty:
         st.warning("Aucune donnée.")
@@ -121,6 +148,12 @@ with tab2:
             st.caption("📌 Données : IRCC – Base relationnelle SQL")
 
 with tab3:
+    try:
+        log_access(conn, current_user_id,
+                  action="view_cartographie",
+                  page="Cartographie")
+    except:
+       pass
     st.subheader("📈 Évolution annuelle par statut")
     if selected_status == "Tous":
         st.info("Choisissez un statut pour visualiser l’évolution.")
@@ -145,6 +178,12 @@ with tab3:
 
 
 with tab4:
+    try:
+        log_access(conn, current_user_id,
+                  action="view_tableau_croise",
+                  page="Tableau croisé")
+    except:
+       pass
     st.subheader("🗺️ Carte des transitions par province")
     if filtered_df.empty:
         st.warning("Pas de données pour afficher la carte.")
@@ -170,6 +209,12 @@ with tab4:
         st_folium(m, width=800, height=550)
 
 with tab5:
+    try:
+        log_access(conn, current_user_id,
+                  action="view_top_provinces",
+                  page="Top provinces de destination")
+    except:
+       pass
     st.subheader("📋 Analyse croisée (pivot)")
     if filtered_df.empty:
         st.warning("Aucune donnée disponible.")
@@ -186,6 +231,12 @@ with tab5:
 
 
 with tab6:
+    try:
+        log_access(conn, current_user_id,
+                  action="view_activite_pays_origine",
+                  page="Activité par pays d’origine")
+    except:
+       pass 
     st.subheader("🌍 Activité par pays d’origine")
 
     if "country_name" not in df.columns:

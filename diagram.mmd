@@ -1,0 +1,12 @@
+```mermaid
+flowchart LR
+  subgraph Données brutes IRCC
+    A[CSV mensuels<br/>Fichiers : 86 mois<br/>Enregs. totaux : 15000]
+  end
+  subgraph Données nettoyées
+    B[Après nettoyage<br/>Doublons supprimés : 120<br/>Pays inconnus : 4500<br/>Enregs. valides : 14880]
+  end
+  subgraph Base SQL
+    C[monthly_transitions<br/>Entrées en base : 14880<br/>Index créés : year_month/province, status]
+  end
+  A --> B --> C
