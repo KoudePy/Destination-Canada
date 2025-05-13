@@ -121,10 +121,10 @@ Projet réalisé par :
 
 ## 📸 Captures et démonstration
 
-![Page d'accueil](<Page 1.png>)
-![Graphique bar 1](<page 2.png>)
-![Graphique Bar](<page 3.png>)
-![Carte du Canada](<page 4.png>)
+![Page d'accueil](</src/assets/images/Page%201.png>)
+![Graphique bar 1](</src/assets/images/page%202.png>)
+![Graphique Bar](</src/assets/images/page%203.png>)
+![Carte du Canada](</src/assets/images/page%204.png>)
 ---
 
 ## 🧾 Licence
