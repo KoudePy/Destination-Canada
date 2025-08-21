@@ -9,3 +9,4 @@ plotly
 watchdog
 streamlit-folium
 folium
+bcrypt

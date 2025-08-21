@@ -141,3 +141,19 @@ with tab4:
 
         st_folium(m, width=800, height=550)
 
+import hashlib, requests, os, datetime
+
+def download_and_log_csv(url, download_dir="data/ircc", log_path="logs/download.log"):
+    os.makedirs(download_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+    local_file = os.path.join(download_dir, os.path.basename(url))
+    resp = requests.get(url); resp.raise_for_status()
+    with open(local_file, "wb") as f: f.write(resp.content)
+
+    md5 = hashlib.md5(resp.content).hexdigest()
+    timestamp = datetime.datetime.utcnow().isoformat()
+    with open(log_path, "a") as log:
+        log.write(f"{timestamp}\t{url}\t{md5}\n")
+
+    return local_file

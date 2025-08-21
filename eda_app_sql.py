@@ -1,4 +1,7 @@
 import streamlit as st
+st.set_page_config(page_title="Destination Canada", page_icon="🇨🇦")
+
+import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import folium
@@ -19,16 +22,41 @@ from db import (
 )
 
 # === Initialisation du logging ===
-conn = sqlite3.connect('expatriation.db', check_same_thread=False)
-init_db(conn)
-current_user_id = 1
+conn = get_connection()   # ← même base que pour les données (database.db)
+init_db(conn)             # réutilise ta fonction existante
 
-# Configuration de la page (appelé une seule fois ici)
-st.set_page_config(page_title="Destination Canada", page_icon="🇨🇦")
 
 # Connexion simplifiée
-st.sidebar.title("🔐 Connexion")
-user_role = st.sidebar.selectbox("Sélectionnez votre rôle", ["Visiteur", "Analyste", "Admin"])
+from db import init_auth_schema, ensure_default_admin, verify_login
+init_auth_schema()
+ensure_default_admin()
+
+def login_form():
+    st.sidebar.title("🔐 Connexion")
+    u = st.sidebar.text_input("Nom d’utilisateur")
+    p = st.sidebar.text_input("Mot de passe", type="password")
+    if st.sidebar.button("Se connecter"):
+        user = verify_login(u, p)
+        if user:
+            st.session_state["user"] = user
+            st.sidebar.success(f"Bienvenue {user['username']} !")
+            st.rerun()
+        else:
+            st.sidebar.error("Identifiants invalides.")
+
+if "user" not in st.session_state:
+    login_form()
+    st.stop()
+
+role_map = {"viewer": "Visiteur", "analyst": "Analyste", "admin": "Admin"}
+current_user_id = st.session_state["user"]["id"]
+user_role = role_map.get(st.session_state["user"]["role"], "Visiteur")
+
+with st.sidebar:
+    st.write(f"Connecté : **{st.session_state['user']['username']}** ({user_role})")
+    if st.button("Se déconnecter"):
+        st.session_state.clear()
+        st.rerun()
 
 st.title("🇨🇦 Destination Canada")
 st.markdown("Analyse alimentée directement par la base relationnelle")
@@ -277,3 +305,23 @@ with tab6:
             ax6b.set_xlabel("Année")
             ax6b.set_ylabel("Nombre de transitions")
             st.pyplot(fig6b)
+
+from db import create_user
+def require_role(*roles):
+    u = st.session_state.get("user")
+    return bool(u and u.get("role") in roles)
+
+if require_role("Admin"):  # on compare au libellé FR que tu utilises partout
+    st.divider()
+    st.subheader("👑 Admin – créer un utilisateur")
+    nu = st.text_input("Nom d’utilisateur (nouveau)")
+    np = st.text_input("Mot de passe", type="password")
+    nr_fr = st.selectbox("Rôle", ["Visiteur","Analyste","Admin"])
+    # remap vers valeurs internes
+    inv_map = {"Visiteur":"viewer","Analyste":"analyst","Admin":"admin"}
+    if st.button("Créer"):
+        if nu and np:
+            ok = create_user(nu, np, inv_map[nr_fr])
+            st.success("Créé ✅") if ok else st.error("Nom déjà utilisé.")
+        else:
+            st.warning("Remplis les deux champs.")

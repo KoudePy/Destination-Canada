@@ -128,3 +128,52 @@ def init_db(conn):
     """)
 
     conn.commit()
+
+# ===== Auth minimal (bcrypt + rôles) =====
+import bcrypt
+
+AUTH_TABLE = "auth_users"
+
+def init_auth_schema():
+    conn = get_connection()  # ← ta connexion existante (database.db)
+    conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS {AUTH_TABLE} (
+            id INTEGER PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password_hash BLOB NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('admin','analyst','viewer')) DEFAULT 'viewer',
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+
+def create_user(username: str, password: str, role: str = "viewer") -> bool:
+    conn = get_connection()
+    pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    try:
+        conn.execute(
+            f"INSERT INTO {AUTH_TABLE} (username, password_hash, role) VALUES (?,?,?)",
+            (username, pw_hash, role)
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+def verify_login(username: str, password: str):
+    conn = get_connection()
+    row = conn.execute(
+        f"SELECT id, username, password_hash, role, is_active FROM {AUTH_TABLE} WHERE username = ?",
+        (username,)
+    ).fetchone()
+    if row and row[4] == 1 and bcrypt.checkpw(password.encode("utf-8"), row[2]):
+        return {"id": row[0], "username": row[1], "role": row[3]}
+    return None
+
+def ensure_default_admin():
+    """Crée admin/MotDePasseFort123! si aucun utilisateur n'existe."""
+    init_auth_schema()
+    n = get_connection().execute(f"SELECT COUNT(*) FROM {AUTH_TABLE}").fetchone()[0]
+    if n == 0:
+        create_user("admin", "MotDePasseFort123!", role="admin")
